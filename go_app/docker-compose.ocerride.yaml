@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      args:
+        VERSION: dev
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+    volumes:
+      - ./:/app
+      - /app/cmd/api
+      - /app/internal
+    command: go run ./cmd/api

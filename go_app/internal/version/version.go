@@ -1,0 +1,23 @@
+package version
+
+var (
+	Version   = "dev"
+	Commit    = "none"
+	BuildTime = "unknown"
+)
+
+type Info struct {
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	BuildTime string `json:"build_time"`
+	GoVersion string `json:"go_version"`
+}
+
+func GetInfo() Info {
+	return Info{
+		Version:   Version,
+		Commit:    Commit,
+		BuildTime: BuildTime,
+		GoVersion: "go1.22",
+	}
+}
