@@ -9,6 +9,7 @@ type User struct {
 	Name      string    `json:"name" db:"name" binding:"required"`
 	Email     string    `json:"email" db:"email" binding:"required,email"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type CreateUserRequest struct {

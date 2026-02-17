@@ -1,51 +1,51 @@
 package database
 
 import (
-    "database/sql"
-    "fmt"
-    "log"
-    "time"
+	"database/sql"
+	"fmt"
+	"log"
+	"time"
 
-    "go_api/internal/config"
-    _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"go_api/internal/config"
 )
 
 func NewPostgres(cfg *config.Config) (*sql.DB, error) {
-    var db *sql.DB
-    var err error
+	var db *sql.DB
+	var err error
 
-    for i := 1; i <= 5; i++ {
-        db, err = sql.Open("postgres", cfg.PostgresDSN())
-        if err != nil {
-            log.Printf("Attempt %d: Failed to open connection: %v", i, err)
-            time.Sleep(time.Second * time.Duration(i))
-            continue
-        }
+	for i := 1; i <= 5; i++ {
+		db, err = sql.Open("postgres", cfg.PostgresDSN())
+		if err != nil {
+			log.Printf("Attempt %d: Failed to open connection: %v", i, err)
+			time.Sleep(time.Second * time.Duration(i))
+			continue
+		}
 
-        err = db.Ping()
-        if err == nil {
-            db.SetMaxOpenConns(25)
-            db.SetMaxIdleConns(5)
-            db.SetConnMaxLifetime(5 * time.Minute)
+		err = db.Ping()
+		if err == nil {
+			db.SetMaxOpenConns(25)
+			db.SetMaxIdleConns(5)
+			db.SetConnMaxLifetime(5 * time.Minute)
 
-            if err := createTable(db); err != nil {
-                return nil, err
-            }
+			if err := createTable(db); err != nil {
+				return nil, err
+			}
 
-            log.Println("Successfully connected to database")
-            return db, nil
-        }
+			log.Println("Successfully connected to database")
+			return db, nil
+		}
 
-        log.Printf("Attempt %d: Failed to ping: %v", i, err)
-        db.Close()
-        time.Sleep(time.Second * time.Duration(i))
-    }
+		log.Printf("Attempt %d: Failed to ping: %v", i, err)
+		db.Close()
+		time.Sleep(time.Second * time.Duration(i))
+	}
 
-    return nil, fmt.Errorf("failed to connect after 5 attempts: %v", err)
+	return nil, fmt.Errorf("failed to connect after 5 attempts: %v", err)
 }
 
 func createTable(db *sql.DB) error {
-    query := `
+	query := `
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -53,6 +53,6 @@ func createTable(db *sql.DB) error {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );`
 
-    _, err := db.Exec(query)
-    return err
+	_, err := db.Exec(query)
+	return err
 }

@@ -13,7 +13,7 @@ func main() {
 		greeting = "Hello Docker!"
 	}
 
-	http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request)  {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, greeting)
 	})
 

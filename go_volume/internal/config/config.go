@@ -6,15 +6,15 @@ import (
 )
 
 type Config struct {
-	DataDir string
-	Port string
+	DataDir       string
+	Port          string
 	MaxUploadSize int64
 }
 
 func Load() *Config {
 	return &Config{
-		DataDir: getEnv("DATA_DIR", "/data"),
-		Port: getEnv("PORT", "8080"),
+		DataDir:       getEnv("DATA_DIR", "/data"),
+		Port:          getEnv("PORT", "8080"),
 		MaxUploadSize: getEnvAsInt64("MAX_UPLOAD_SIZE", 10*1024*1024),
 	}
 }
