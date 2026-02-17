@@ -1,0 +1,141 @@
+networks:
+  app-network:
+    driver: bridge
+    name: go-network
+
+services:
+  # Сервис A
+  service-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: service-a
+    container_name: service-a
+    environment:
+      - SERVICE_NAME=service-a
+      - PEER_NAME=service-b
+      - PORT=8080
+    ports:
+      - "8081:8080"
+    networks:
+      app-network:
+        aliases:
+          - api-a
+          - backend-a
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/ping",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Сервис B
+  service-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: service-b
+    container_name: service-b
+    environment:
+      - SERVICE_NAME=service-b
+      - PEER_NAME=service-a
+      - PORT=8080
+    ports:
+      - "8082:8080"
+    networks:
+      app-network:
+        aliases:
+          - api-b
+          - backend-b
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/ping",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Клиент для тестирования сети
+  network-test:
+    image: alpine:latest
+    container_name: network-test
+    command: >
+      sh -c "
+        apk add --no-cache curl jq bind-tools;
+        echo '========================================';
+        echo '     DOCKER NETWORK TESTING TOOL';
+        echo '========================================';
+        echo '';
+        
+        while true; do
+          echo '';
+          echo '--- Network Test at '$$(date)' ---';
+          echo '';
+          
+          echo '1. DNS Resolution:';
+          nslookup service-a 2>/dev/null | grep Address;
+          nslookup service-b 2>/dev/null | grep Address;
+          nslookup api-a 2>/dev/null | grep Address;
+          nslookup api-b 2>/dev/null | grep Address;
+          echo '';
+          
+          echo '2. Service Health:';
+          for s in service-a service-b; do
+            if curl -s http://$$s:8080/ping >/dev/null; then
+              echo "   ✅ $$s - UP";
+            else
+              echo "   ❌ $$s - DOWN";
+            fi
+          done;
+          echo '';
+          
+          echo '3. Service Responses:';
+          for s in service-a service-b; do
+            echo "   $$s: $$(curl -s http://$$s:8080/ | jq -c .)";
+          done;
+          echo '';
+          
+          echo '4. Cross-Service Calls:';
+          echo "   service-a -> service-b: $$(curl -s http://service-a:8080/peer | jq -c .)";
+          echo "   service-b -> service-a: $$(curl -s http://service-b:8080/peer | jq -c .)";
+          echo '';
+          
+          echo '5. Network Aliases:';
+          echo "   api-a -> $$(curl -s http://api-a:8080/ | jq -r .name)";
+          echo "   api-b -> $$(curl -s http://api-b:8080/ | jq -r .name)";
+          echo '';
+          
+          echo '6. Network Info:';
+          echo "   Container IPs:";
+          for s in service-a service-b; do
+            IP=$$(getent hosts $$s | awk '{ print $$1 }');
+            echo "   $$s: $$IP";
+          done;
+          echo '';
+          
+          echo '----------------------------------------';
+          sleep 10;
+        done
+      "
+    networks:
+      - app-network
+    depends_on:
+      service-a:
+        condition: service_healthy
+      service-b:
+        condition: service_healthy
