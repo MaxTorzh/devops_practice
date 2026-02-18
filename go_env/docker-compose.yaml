@@ -1,0 +1,60 @@
+services:
+  # .env
+  app:
+    build: .
+    container_name: go-env-app
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # development
+  app-dev:
+    build: .
+    container_name: go-env-dev
+    env_file:
+      - ./configs/development.env
+    ports:
+      - "8081:8080"
+
+  # staging
+  app-staging:
+    build: .
+    container_name: go-env-staging
+    env_file:
+      - ./configs/staging.env
+    ports:
+      - "8082:8080"
+
+  # production
+  app-prod:
+    build: .
+    container_name: go-env-prod
+    env_file:
+      - ./configs/production.env
+    ports:
+      - "8083:8080"
+
+  # psql
+  postgres:
+    image: postgres:16-alpine
+    container_name: go-env-postgres
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # redis
+  redis:
+    image: redis:7-alpine
+    container_name: go-env-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
